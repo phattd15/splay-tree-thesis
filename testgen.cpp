@@ -60,6 +60,21 @@ void buildRandomAccessTest() {
     createTestWithData(testData, "random_access_1000000.txt");
 }
 
+void buildFullyRandomTest() {
+    TestType testData;
+
+    int testSize = 1000000;
+    for (int i = 0; i < testSize; i++)
+        testData.emplace_back(0, rand()% testSize);
+
+    int numAccess = 1000000;
+    while (numAccess--) {
+        testData.emplace_back(1, rand() % testSize);
+    }
+
+    createTestWithData(testData, "fully_random_1000000.txt");
+}
+
 int main() {
     srand(static_cast<unsigned int>(time(0)));
     buildRandomAccessTest();
