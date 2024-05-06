@@ -78,6 +78,7 @@ void buildFullyRandomTest() {
 int main() {
     srand(static_cast<unsigned int>(time(0)));
     buildRandomAccessTest();
+    buildFullyRandomTest();
     writeTestNames();
     return 0;
 }
