@@ -1,2 +1,6 @@
 random_access_1000000.txt
 fully_random_1000000.txt
+random_access_10000.txt
+small_random_access_10000.txt
+mid_random_access_10000.txt
+gradual_access_100000.txt

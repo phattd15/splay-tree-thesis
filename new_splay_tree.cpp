@@ -546,6 +546,78 @@ bool splay_tree::_exit_delete_setup = false;
 vector<splay_node*> splay_tree::node_pool;
 vector<splay_node*> splay_tree::pointers_to_delete;
 
+using namespace std::chrono;
+
 int main() {
-    
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
+    ifstream inputFile("tests/mid_random_access_10000.txt"); // Assuming input file name is input.txt
+    ofstream outputFile("output_splay.csv"); // Output CSV file
+
+    int N;
+    inputFile >> N; // Read the number of operations
+
+    splay_tree mySet;
+    vector<double> runTimes;
+
+    for (int i = 0; i < N; ++i) {
+        int op, value;
+        inputFile >> op >> value;
+
+        switch (op) {
+            case 0: // Insert operation
+            {
+                // auto start = high_resolution_clock::now(); // Start measuring time
+                mySet.insert(value);
+                // auto stop = high_resolution_clock::now(); // Stop measuring time
+                // auto ms_int = duration_cast<milliseconds>(stop - start);
+                // /* Getting number of milliseconds as a double. */
+                // duration<double, std::milli> ms_double = stop - start;
+                // runTimes.push_back(ms_double.count());
+                break;
+            }
+            case 1: // Find operation
+            {
+                auto start = high_resolution_clock::now(); // Start measuring time
+                mySet.lower_bound(value);
+                auto stop = high_resolution_clock::now(); // Stop measuring time
+                auto ms_int = duration_cast<milliseconds>(stop - start);
+                /* Getting number of milliseconds as a double. */
+                duration<double, std::milli> ms_double = stop - start;
+                runTimes.push_back(ms_double.count());
+                break;
+            }
+            case 2: // Erase operation
+            {
+                auto start = high_resolution_clock::now(); // Start measuring time
+                mySet.erase(value);
+                auto stop = high_resolution_clock::now(); // Stop measuring time
+                auto ms_int = duration_cast<milliseconds>(stop - start);
+                /* Getting number of milliseconds as a double. */
+                duration<double, std::milli> ms_double = stop - start;
+                runTimes.push_back(ms_double.count());
+                break;
+            }
+            case 3: // Splay operation (Not implemented here)
+                // Implement your splay operation
+                break;
+            default:
+                cerr << "Invalid operation: " << op << endl;
+        }
+    }
+
+    // Dump runtimes to CSV file
+    outputFile << "Operation,Runtime (s)\n";
+    for (size_t i = 0; i < runTimes.size(); ++i) {
+        outputFile << i << "," << runTimes[i] << "\n";
+    }
+
+    // Close files
+    inputFile.close();
+    outputFile.close();
+
+    return 0;
 }
