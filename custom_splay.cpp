@@ -1,110 +1,335 @@
 #include <bits/stdc++.h>
 using namespace std;
 using namespace std::chrono;
-
 struct Node {
-    int key;
-    Node* left;
-    Node* right;
-    Node(int k) : key(k), left(nullptr), right(nullptr) {}
+	int data; // holds the key
+	Node *parent; // pointer to the parent
+	Node *left; // pointer to left child
+	Node *right; // pointer to right child
 };
 
+typedef Node *NodePtr;
+
+// class SplayTree implements the operations in Splay tree
 class SplayTree {
 private:
-    Node* __root;
+	NodePtr root;
 
-    // Zig rotation
-    Node* zig(Node* x) {
-        Node* y = x->left;
-        x->left = y->right;
-        y->right = x;
-        return y;
-    }
+	void preOrderHelper(NodePtr node) {
+		if (node != nullptr) {
+			cout<<node->data<<" ";
+			preOrderHelper(node->left);
+			preOrderHelper(node->right);
+		} 
+	}
 
-    // Zag rotation
-    Node* zag(Node* x) {
-        Node* y = x->right;
-        x->right = y->left;
-        y->left = x;
-        return y;
-    }
+	void inOrderHelper(NodePtr node) {
+		if (node != nullptr) {
+			inOrderHelper(node->left);
+			cout<<node->data<<" ";
+			inOrderHelper(node->right);
+		} 
+	}
 
-    // Splay operation
-    Node* splay(Node* root, int key) {
-        if (root == nullptr || root->key == key)
-            return root;
+	void postOrderHelper(NodePtr node) {
+		if (node != nullptr) {
+			postOrderHelper(node->left);
+			postOrderHelper(node->right);
+			cout<<node->data<<" ";
+		} 
+	}
 
-        if (root->key > key) {
-            if (root->left == nullptr) return root;
-            if (root->left->key > key) {
-                root->left->left = splay(root->left->left, key);
-                root = zig(root);
-            } else if (root->left->key < key) {
-                root->left->right = splay(root->left->right, key);
-                if (root->left->right != nullptr)
-                    root->left = zag(root->left);
-            }
-            return (root->left == nullptr) ? root : zig(root);
-        } else {
-            if (root->right == nullptr) return root;
-            if (root->right->key > key) {
-                root->right->left = splay(root->right->left, key);
-                if (root->right->left != nullptr)
-                    root->right = zig(root->right);
-            } else if (root->right->key < key) {
-                root->right->right = splay(root->right->right, key);
-                root = zag(root);
-            }
-            return (root->right == nullptr) ? root : zag(root);
-        }
-    }
+	NodePtr searchTreeHelper(NodePtr node, int key) {
+		if (node == nullptr || key == node->data) {
+			return node;
+		}
 
-    // Helper function to insert a key
-    Node* insert(Node* root, int key) {
-        if (root == nullptr)
-            return new Node(key);
-        
-        root = splay(root, key);
+		if (key < node->data) {
+			return searchTreeHelper(node->left, key);
+		} 
+		return searchTreeHelper(node->right, key);
+	}
 
-        if (root->key == key)
-            return root;
+	void deleteNodeHelper(NodePtr node, int key) {
+		NodePtr x = nullptr;
+		NodePtr t, s;
+		while (node != nullptr){
+			if (node->data == key) {
+				x = node;
+			}
 
-        Node* newRoot = new Node(key);
+			if (node->data <= key) {
+				node = node->right;
+			} else {
+				node = node->left;
+			}
+		}
 
-        if (root->key > key) {
-            newRoot->right = root;
-            newRoot->left = root->left;
-            root->left = nullptr;
-        } else {
-            newRoot->left = root;
-            newRoot->right = root->right;
-            root->right = nullptr;
-        }
+		if (x == nullptr) {
+			cout<<"Couldn't find key in the tree"<<endl;
+			return;
+		}
+		split(x, s, t); // split the tree
+		if (s->left){ // remove x
+			s->left->parent = nullptr;
+		}
+		root = join(s->left, t);
+		delete(s);
+		s = nullptr;
+	}
 
-        return newRoot;
-    }
+	void printHelper(NodePtr root, string indent, bool last) {
+		// print the tree structure on the screen
+	   	if (root != nullptr) {
+		   cout<<indent;
+		   if (last) {
+		      cout<<"└────";
+		      indent += "     ";
+		   } else {
+		      cout<<"├────";
+		      indent += "|    ";
+		   }
 
-    // Helper function to search for a key
-    Node* search(Node* root, int key) {
-        return splay(root, key);
-    }
+		   cout<<root->data<<endl;
+
+		   printHelper(root->left, indent, false);
+		   printHelper(root->right, indent, true);
+		}
+	}
+
+	// rotate left at node x
+	void leftRotate(NodePtr x) {
+		NodePtr y = x->right;
+		x->right = y->left;
+		if (y->left != nullptr) {
+			y->left->parent = x;
+		}
+		y->parent = x->parent;
+		if (x->parent == nullptr) {
+			this->root = y;
+		} else if (x == x->parent->left) {
+			x->parent->left = y;
+		} else {
+			x->parent->right = y;
+		}
+		y->left = x;
+		x->parent = y;
+	}
+
+	// rotate right at node x
+	void rightRotate(NodePtr x) {
+		NodePtr y = x->left;
+		x->left = y->right;
+		if (y->right != nullptr) {
+			y->right->parent = x;
+		}
+		y->parent = x->parent;
+		if (x->parent == nullptr) {
+			this->root = y;
+		} else if (x == x->parent->right) {
+			x->parent->right = y;
+		} else {
+			x->parent->left = y;
+		}
+		y->right = x;
+		x->parent = y;
+	}
+
+	// splaying
+	void splay(NodePtr x) {
+		while (x->parent) {
+			if (!x->parent->parent) {
+				if (x == x->parent->left) {
+					// zig rotation
+					rightRotate(x->parent);
+				} else {
+					// zag rotation
+					leftRotate(x->parent);
+				}
+			} else if (x == x->parent->left && x->parent == x->parent->parent->left) {
+				// zig-zig rotation
+				rightRotate(x->parent->parent);
+				rightRotate(x->parent);
+			} else if (x == x->parent->right && x->parent == x->parent->parent->right) {
+				// zag-zag rotation
+				leftRotate(x->parent->parent);
+				leftRotate(x->parent);
+			} else if (x == x->parent->right && x->parent == x->parent->parent->left) {
+				// zig-zag rotation
+				leftRotate(x->parent);
+				rightRotate(x->parent);
+			} else {
+				// zag-zig rotation
+				rightRotate(x->parent);
+				leftRotate(x->parent);
+			}
+		}
+	}
+
+	// joins two trees s and t
+	NodePtr join(NodePtr s, NodePtr t){
+		if (!s) {
+			return t;
+		}
+
+		if (!t) {
+			return s;
+		}
+		NodePtr x = maximum(s);
+		splay(x);
+		x->right = t;
+		t->parent = x;
+		return x;
+	}
+
+	// splits the tree into s and t
+	void split(NodePtr &x, NodePtr &s, NodePtr &t) {
+		splay(x);
+		if (x->right) {
+			t = x->right;
+			t->parent = nullptr;
+		} else {
+			t = nullptr;
+		}
+		s = x;
+		s->right = nullptr;
+		x = nullptr;
+	} 
 
 public:
-    // Constructor
-    SplayTree() {
-        __root = nullptr;
-    }
+	SplayTree() {
+		root = nullptr;
+	}
 
-    // Insert method
-    void insert(int key) {
-        __root = insert(__root, key);
-    }
+	// Pre-Order traversal
+	// Node->Left Subtree->Right Subtree
+	void preorder() {
+		preOrderHelper(this->root);
+	}
 
-    // Find method
-    bool find(int key) {
-        __root = search(__root, key);
-        return __root != nullptr && __root->key == key;
-    }
+	// In-Order traversal
+	// Left Subtree -> Node -> Right Subtree
+	void inorder() {
+		inOrderHelper(this->root);
+	}
+
+	// Post-Order traversal
+	// Left Subtree -> Right Subtree -> Node
+	void postorder() {
+		postOrderHelper(this->root);
+	}
+
+	// search the tree for the key k
+	// and return the corresponding node
+	NodePtr searchTree(int k) {
+		NodePtr x = searchTreeHelper(this->root, k);
+		if (x) {
+			splay(x);
+		}
+		return x;
+	}
+
+	// find the node with the minimum key
+	NodePtr minimum(NodePtr node) {
+		while (node->left != nullptr) {
+			node = node->left;
+		}
+		return node;
+	}
+
+	// find the node with the maximum key
+	NodePtr maximum(NodePtr node) {
+		while (node->right != nullptr) {
+			node = node->right;
+		}
+		return node;
+	}
+
+	// find the successor of a given node
+	NodePtr successor(NodePtr x) {
+		// if the right subtree is not null,
+		// the successor is the leftmost node in the
+		// right subtree
+		if (x->right != nullptr) {
+			return minimum(x->right);
+		}
+
+		// else it is the lowest ancestor of x whose
+		// left child is also an ancestor of x.
+		NodePtr y = x->parent;
+		while (y != nullptr && x == y->right) {
+			x = y;
+			y = y->parent;
+		}
+		return y;
+	}
+
+	// find the predecessor of a given node
+	NodePtr predecessor(NodePtr x) {
+		// if the left subtree is not null,
+		// the predecessor is the rightmost node in the 
+		// left subtree
+		if (x->left != nullptr) {
+			return maximum(x->left);
+		}
+
+		NodePtr y = x->parent;
+		while (y != nullptr && x == y->left) {
+			x = y;
+			y = y->parent;
+		}
+
+		return y;
+	}
+
+	// insert the key to the tree in its appropriate position
+	void insert(int key) {
+		// normal BST insert
+		NodePtr node = new Node;
+		node->parent = nullptr;
+		node->left = nullptr;
+		node->right = nullptr;
+		node->data = key;
+		NodePtr y = nullptr;
+		NodePtr x = this->root;
+
+		while (x != nullptr) {
+			y = x;
+			if (node->data < x->data) {
+				x = x->left;
+			} else {
+				x = x->right;
+			}
+		}
+
+		// y is parent of x
+		node->parent = y;
+		if (y == nullptr) {
+			root = node;
+		} else if (node->data < y->data) {
+			y->left = node;
+		} else {
+			y->right = node;
+		}
+
+		// splay the node
+		splay(node);
+	}
+
+	NodePtr getRoot(){
+		return this->root;
+	}
+
+	// delete the node from the tree
+	void deleteNode(int data) {
+		deleteNodeHelper(this->root, data);
+	}
+
+	// print the tree structure on the screen
+	void prettyPrint() {
+		printHelper(this->root, "", true);
+	}
+
 };
 
 int main() {
@@ -113,15 +338,15 @@ int main() {
     using std::chrono::duration;
     using std::chrono::milliseconds;
 
-    ifstream inputFile("tests/gradual_access_100000.txt"); // Assuming input file name is input.txt
-    ofstream outputFile("output_splay_cus.csv"); // Output CSV file
+    ifstream inputFile("tests/random_access_1000000.txt"); // Assuming input file name is input.txt
+    // ofstream outputFile("output_splay_cus_2.csv"); // Output CSV file
 
     int N;
     inputFile >> N; // Read the number of operations
-
+    int tt = 0;
     SplayTree mySet;
     vector<double> runTimes;
-
+    double total = 0;
     for (int i = 0; i < N; ++i) {
         int op, value;
         inputFile >> op >> value;
@@ -145,8 +370,9 @@ int main() {
                 auto stop = high_resolution_clock::now(); // Stop measuring time
                 auto ms_int = duration_cast<milliseconds>(stop - start);
                 /* Getting number of milliseconds as a double. */
-                duration<double, std::milli> ms_double = stop - start;
-                runTimes.push_back(ms_double.count());
+                // duration<double, std::milli> ms_double = stop - start;
+                // total += ms_double.count();
+                // tt++;
                 break;
             }
             case 2: // Erase operation
@@ -169,15 +395,10 @@ int main() {
     }
 
     // Dump runtimes to CSV file
-    outputFile << "Operation,Runtime (s)\n";
-    for (size_t i = 0; i < runTimes.size(); ++i) {
-        outputFile << i << "," << runTimes[i] << "\n";
-    }
 
     // Close files
     inputFile.close();
-    outputFile.close();
-
-    cerr << "finish" << endl;
+    // cout << total * 1000.0 / tt;
+    // cerr << "finish" << endl;
     return 0;
 }

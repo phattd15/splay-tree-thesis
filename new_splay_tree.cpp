@@ -554,8 +554,8 @@ int main() {
     using std::chrono::duration;
     using std::chrono::milliseconds;
 
-    ifstream inputFile("tests/mid_random_access_10000.txt"); // Assuming input file name is input.txt
-    ofstream outputFile("output_splay.csv"); // Output CSV file
+    ifstream inputFile("tests/gradual_access_100000.txt"); // Assuming input file name is input.txt
+    ofstream outputFile("new_splay_grad.csv"); // Output CSV file
 
     int N;
     inputFile >> N; // Read the number of operations

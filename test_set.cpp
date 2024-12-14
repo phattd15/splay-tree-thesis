@@ -13,7 +13,7 @@ int main() {
     using std::chrono::duration;
     using std::chrono::milliseconds;
 
-    ifstream inputFile("tests/gradual_access_100000.txt"); // Assuming input file name is input.txt
+    ifstream inputFile("tests/random_access_1000000.txt"); // Assuming input file name is input.txt
     ofstream outputFile("output_set.csv"); // Output CSV file
 
     int N;
@@ -21,7 +21,7 @@ int main() {
 
     set<int> mySet;
     vector<double> runTimes;
-
+    double total = 0.0;
     for (int i = 0; i < N; ++i) {
         int op, value;
         inputFile >> op >> value;
@@ -47,6 +47,7 @@ int main() {
                 /* Getting number of milliseconds as a double. */
                 duration<double, std::milli> ms_double = stop - start;
                 runTimes.push_back(ms_double.count());
+                total += ms_double.count();
                 break;
             }
             case 2: // Erase operation
@@ -67,6 +68,7 @@ int main() {
                 cerr << "Invalid operation: " << op << endl;
         }
     }
+    cout << total * 1000.0 / runTimes.size() << '\n';
 
     // Dump runtimes to CSV file
     outputFile << "Operation,Runtime (s)\n";
